@@ -1,15 +1,12 @@
-// required dom elements
 const buttonEl = document.getElementById('button');
 const messageEl = document.getElementById('message');
 const titleEl = document.getElementById('real-time-title');
 
-// set initial state of application variables
 messageEl.style.display = 'none';
 let isRecording = false;
 let socket;
 let recorder;
 
-// runs real-time transcription and handles global variables
 const run = async () => {
   if (isRecording) { 
     if (socket) {
@@ -32,15 +29,12 @@ const run = async () => {
     
     const { token } = data;
 
-    console.log(token)
-
     // establish wss with AssemblyAI (AAI) at 16000 sample rate
     socket = await new WebSocket(`wss://api.assemblyai.com/v2/realtime/ws?sample_rate=16000&token=${token}`);
 
     // handle incoming messages to display transcription to the DOM
     const texts = {};
     socket.onmessage = (message) => {
-      //Message is a message even similar to event in adEventListner console.log(message)
       let msg = '';
       const res = JSON.parse(message.data);
       console.log(res)
@@ -66,29 +60,28 @@ const run = async () => {
     }
 
     socket.onopen = () => {
-      socket.send(JSON.stringify({ name: "Michelle" }));
       // once socket is open, begin recording
       messageEl.style.display = '';
       navigator.mediaDevices.getUserMedia({ audio: true })
         .then((stream) => {
           recorder = new RecordRTC(stream, {
             type: 'audio',
-            mimeType: 'audio/webm;codecs=pcm', // endpoint requires 16bit PCM audio
+            mimeType: 'audio/webm;codecs=pcm',
             recorderType: StereoAudioRecorder,
-            timeSlice: 300, // set 250 ms intervals of data that sends to AAI
+            timeSlice: 300, 
             desiredSampRate: 16000,
-            numberOfAudioChannels: 1, // real-time requires only one channel
+            numberOfAudioChannels: 1, 
             bufferSize: 4096,
             audioBitsPerSecond: 128000,
             ondataavailable: (blob) => {
               const reader = new FileReader();
               reader.onload = () => {
-                const base64data = reader.result;
+                const audioData = reader.result.split(',')[1]
+                console.log(audioData)
+            
 
-                // audio data must be sent as a base64 encoded string
                 if (socket) {
-                  socket.send(JSON.stringify({ audio_data: base64data.split('base64,')[1] }));
-                  socket.send(JSON.stringify({end_utterance_silence_threshold: 20000}));
+                  socket.send(JSON.stringify({ audio_data: audioData }));
                 }
               };
               reader.readAsDataURL(blob);

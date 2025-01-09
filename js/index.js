@@ -37,7 +37,6 @@ const run = async () => {
     socket.onmessage = (message) => {
       let msg = '';
       const res = JSON.parse(message.data);
-      console.log(res)
       texts[res.audio_start] = res.text;
       const keys = Object.keys(texts);
       keys.sort((a, b) => a - b);
@@ -76,9 +75,7 @@ const run = async () => {
             ondataavailable: (blob) => {
               const reader = new FileReader();
               reader.onload = () => {
-                const audioData = reader.result.split(',')[1]
-                console.log(audioData)
-            
+                const audioData = reader.result.split(',')[1]  
 
                 if (socket) {
                   socket.send(JSON.stringify({ audio_data: audioData }));
